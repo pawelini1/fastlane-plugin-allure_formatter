@@ -1,0 +1,9 @@
+lane :test do
+  allure_formatter(
+  	reportPath: './allure-report', # Provide path to your allure report directory
+  	suiteProvider: lambda { |test| # Provide lambda that returns a suite name for the given test (given object contains test data from ./allure-report/data/test-cases/*.json)
+  		# Here I'm using historyId ("WHSportsbookUITests/Suite04UserMenuTests/testUserCanNavigateToDepositPageAndReturn()") to return filename
+  		test['historyId'].split("/")[1]
+  	}
+  )
+end
