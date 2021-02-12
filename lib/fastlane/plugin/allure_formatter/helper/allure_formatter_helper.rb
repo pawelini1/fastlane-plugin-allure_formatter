@@ -102,15 +102,17 @@ module Fastlane
       end    
 
       def self.generateDocumentation(testsSourcePath:)    
-        regex = "^\\s*##\\s+(\\w+)\\s*\\n\\s*(.*)\\s*$"    
-        paths = `pcregrep -Mlr -e '#{regex}' #{testsSourcePath}`.split("\n")
+        parameterRegex = "^\\s*##\\s+(\\w+)\\s*\\n\\s*(.*)\\s*$"   
+        swiftFileRegex = ".*\\.swift$"
+
+        paths = `pcregrep -Mlr --include='#{swiftFileRegex}' -e '#{parameterRegex}' #{testsSourcePath}`.split("\n")
         documentation = paths.map { |path|
           Helper::AllureFormatterHelper.searchSwiftStructure(
             structure: JSON.parse(`sourcekitten doc --single-file #{path}`)[path]['key.substructure'],
-            match: lambda { |element| !element['key.doc.comment'].to_s.scan(/#{regex}/).empty? }
+            match: lambda { |element| !element['key.doc.comment'].to_s.scan(/#{parameterRegex}/).empty? }
           ).map { |element| Documentation.new(element['key.name'], element['key.path'], element['key.doc.comment']) }
         }.flatten.inject(Hash.new(0)) { |hash, element| 
-          element.values = element.doc.scan(/#{regex}/).inject(Hash.new(0)) { |hash, matches| 
+          element.values = element.doc.scan(/#{parameterRegex}/).inject(Hash.new(0)) { |hash, matches| 
             hash[matches[0]] = matches[1]
             hash
           }
