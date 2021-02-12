@@ -149,7 +149,7 @@ module Fastlane
       end
 
       def self.getSuites(reportPath:)
-        suitesFile = File.open "#{reportPath}/data/suites-original-small.json"
+        suitesFile = File.open "#{reportPath}/data/suites.json"
         JSON.load suitesFile
       end
 
