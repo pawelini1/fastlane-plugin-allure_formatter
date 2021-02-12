@@ -5,12 +5,15 @@ require_relative '../helper/allure_formatter_helper'
 module Fastlane
   module Actions
     class AllureFormatterAction < Action
-      def self.run(params)        
+      def self.run(params)   
+        # Input parameters
         reportPath = File.expand_path(params[:reportPath])
-        suiteProvider = params[:suiteProvider]
+        pathProvider = params[:pathProvider]
+        testModifier = params[:testModifier]
         quiet = params[:quiet]
 
-        suites = Helper::AllureFormatterHelper.generateSuites(allTests: Helper::AllureFormatterHelper.getAllTests(reportPath: reportPath, suiteProvider: suiteProvider, quiet: quiet))
+        # Implementation
+        suites = Helper::AllureFormatterHelper.generateSuites(allTests: Helper::AllureFormatterHelper.getAllTests(reportPath: reportPath, pathProvider: pathProvider, testModifier: testModifier, quiet: quiet))
         widgetSuites = Helper::AllureFormatterHelper.generateWidgetSuites(suites: suites)
         Helper::AllureFormatterHelper.saveSuites(reportPath: reportPath, suites: suites)
         Helper::AllureFormatterHelper.saveWidgetSuites(reportPath: reportPath, suites: widgetSuites)
@@ -40,11 +43,18 @@ module Fastlane
                                   optional: false,
                                  is_string: true,
                                       type: String),
-          FastlaneCore::ConfigItem.new(key: :suiteProvider,
-                               description: "Lambda defining suite name for the test",
-                                  optional: false,
+          FastlaneCore::ConfigItem.new(key: :pathProvider,
+                               description: "Lambda defining path for the given test",
+                                  optional: true,
                                  is_string: false,
-                                      type: Proc),
+                                      type: Proc,
+                             default_value: lambda { |t| nil }),
+          FastlaneCore::ConfigItem.new(key: :testModifier,
+                               description: "Lambda returning new test data for given test",
+                                  optional: true,
+                                 is_string: false,
+                                      type: Proc,
+                             default_value: lambda { |t| t }),          
           FastlaneCore::ConfigItem.new(key: :quiet,
                                description: "Prevents any console output to be displayed",
                                   optional: true,
