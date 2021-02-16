@@ -28,11 +28,13 @@ module Fastlane
             testPath = test['fullName']
             
             if testDescription = Helper::AllureFormatterHelper.value(allDocs, "#{testPath}.values.AllureDescription")
+              puts "  > Description: " + "#{testDescription.sub("\n", "\\n")}".green if !quiet
               test['description'] = testDescription
-              test['descriptionHtml'] = testDescription
+              test['descriptionHtml'] = testDescription.sub("\n", "<br>")
             end
 
             if testName = Helper::AllureFormatterHelper.value(allDocs, "#{testPath}.values.AllureName")
+              puts "  > Name: " + "#{testName.sub("\n", "\\n")}".green if !quiet
               test['name'] = testName
             end
 
@@ -44,7 +46,7 @@ module Fastlane
             
             if testTags = Helper::AllureFormatterHelper.value(allDocs, "#{testPath}.values.AllureTags")
               tags = testTags.split(",").map { |e| e.strip }
-              puts "  > Tags: " + "#{tags}".green if !quiet
+              puts "  > Tags: " + "#{tags}".sub("\n", "\\n").green if !quiet
               Helper::AllureFormatterHelper.put(value: tags, path: ['extra', 'tags'], data: test)
             end            
 

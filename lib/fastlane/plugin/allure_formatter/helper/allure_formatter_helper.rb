@@ -23,11 +23,7 @@ module Fastlane
             puts "  > Path: " + "#{path}".green if !quiet
             test['path'] = (path.kind_of?(Array) ? path : [path]) + [testData['name']]
 
-            if test['name'] != testData['name']
-              puts "  > Name: " + "#{testData['name']}".green if !quiet
-              test['name'] = testData['name']
-            end
-
+            test['name'] = testData['name']
             test['isTest'] = true
             test
           })
@@ -102,7 +98,10 @@ module Fastlane
       end    
 
       def self.generateDocumentation(testsSourcePath:)    
-        parameterRegex = "^\\s*##\\s+(\\w+)\\s*\\n\\s*(.*)\\s*$"   
+        if not Helper::AllureFormatterHelper.command("sourcekitten") then UI.user_error!("This action requires 'sourcekitten' command to be available. Run 'brew install sourcekitten' or visit https://github.com/jpsim/SourceKitten for more details.") end
+        if not Helper::AllureFormatterHelper.command("pcregrep") then UI.user_error!("This action requires 'pcregrep' command to be available. Run 'brew install pcre' or visit https://formulae.brew.sh/formula/pcre for more details.") end
+
+        parameterRegex = "^\\s*##\\s+(\\w+)\\s*$"
         swiftFileRegex = ".*\\.swift$"
 
         paths = `pcregrep -Mlr --include='#{swiftFileRegex}' -e '#{parameterRegex}' #{testsSourcePath}`.split("\n")
@@ -112,7 +111,11 @@ module Fastlane
             match: lambda { |element| !element['key.doc.comment'].to_s.scan(/#{parameterRegex}/).empty? }
           ).map { |element| Documentation.new(element['key.name'], element['key.path'], element['key.doc.comment']) }
         }.flatten.inject(Hash.new(0)) { |hash, element| 
-          element.values = element.doc.scan(/#{parameterRegex}/).inject(Hash.new(0)) { |hash, matches| 
+          matches = element.doc.enum_for(:scan, /#{parameterRegex}/).map{ Regexp.last_match }
+          element.values = matches.each_with_index.map { |val, i| 
+            endIndex = (matches.size > (i+1) ? matches[i+1].begin(0) : element.doc.length) - val.end(0)
+            [element.doc[val.begin(1), val.end(1) - val.begin(1)], element.doc[val.end(0), endIndex].strip]
+          }.inject(Hash.new(0)) { |hash, matches| 
             hash[matches[0]] = matches[1]
             hash
           }
@@ -199,6 +202,10 @@ module Fastlane
           f.write(JSON.pretty_generate(data))
         end
       end  
+
+      def self.command(command)
+       system("which #{ command} > /dev/null 2>&1")
+      end
 
       # Classes
       class Documentation
