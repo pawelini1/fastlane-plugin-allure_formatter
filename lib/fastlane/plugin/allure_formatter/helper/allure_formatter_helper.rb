@@ -9,10 +9,7 @@ module Fastlane
       # Getting all tests from suite and applying new formatting
       def self.getAllTests(reportPath:, pathProvider:, testModifier:, quiet:)
         allTests = []
-        Helper::AllureFormatterHelper.getSuites(reportPath: reportPath)['children'].each { |suite|
-          allTests.push(*suite['children'].map { |test|
-            testData = Helper::AllureFormatterHelper.getTestCase(reportPath: reportPath, id: test['uid'])
-            
+        Helper::AllureFormatterHelper.getAllTestCases(reportPath: reportPath).each { |testData|
             puts "Test: " + "#{testData['historyId']}".cyan  if !quiet
             
             testData = testModifier.call(testData)
@@ -21,12 +18,12 @@ module Fastlane
             path = pathProvider.call(testData) || suite['name']
             
             puts "  > Path: " + "#{path}".green if !quiet
-            test['path'] = (path.kind_of?(Array) ? path : [path]) + [testData['name']]
+            testData['path'] = (path.kind_of?(Array) ? path : [path]) + [testData['name']]
 
-            test['name'] = testData['name']
-            test['isTest'] = true
-            test
-          })
+            testData['name'] = testData['name']
+            testData['isTest'] = true
+
+            allTests.push(testData)
         }
         allTests
       end
@@ -147,6 +144,13 @@ module Fastlane
       def self.getTestCase(reportPath:, id:)
         testCaseFile = File.open "#{reportPath}/data/test-cases/#{id}.json"
         JSON.load testCaseFile
+      end
+
+      def self.getAllTestCases(reportPath:)
+        Dir["#{reportPath}/data/test-cases/*.json"].map { |path| 
+          testCaseFile = File.open path
+          JSON.load testCaseFile
+        }
       end
 
       def self.saveTestCase(data:, reportPath:)
